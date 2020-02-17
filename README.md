@@ -1,7 +1,7 @@
 
 Advertising Data ETL demo
 
-How install:
+How to install:
 
  - create virtual env on Python 3
  - pip install -r requirements.txt
