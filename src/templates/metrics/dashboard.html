@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% load crispy_forms_tags %}
+
+<script>
+{% block jquery %}
+
+
+var ctx = document.getElementById("metric_chart_id");
+console.log('test');
+
+function toggleDataSeries(e) {
+	if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+		e.dataSeries.visible = false;
+	} else {
+		e.dataSeries.visible = true;
+	}
+	e.chart.render();
+}
+
+function addData(data) {
+	var dataPoints = [];
+    for (var i = 0; i < data.length; i++) {
+		dataPoints.push({
+			x: new Date(data[i].x),
+			y: data[i].y
+		});
+	}
+    console.log(dataPoints);
+    return dataPoints;
+}
+
+function loadChartData(query){
+    var endpoint = '{% url "metrics:data_json" %}';
+    if (query != undefined){
+        endpoint = endpoint + '?' + query
+        console.log(endpoint);
+    }
+    $.get(endpoint, function(data) {
+        var options = {
+                exportEnabled: true,
+                animationEnabled: true,
+                title:{
+                    text: data.title
+                },
+                subtitles: [{
+                    text: data.date_range
+                }],
+                axisX: {
+                    title: "Time"
+                },
+                axisX: {
+		            valueFormatString: "DD MMM YYYY",
+	            },
+                axisY: {
+                    title: "Clicks",
+                    titleFontColor: "#4F81BC",
+                    lineColor: "#4F81BC",
+                    labelFontColor: "#4F81BC",
+                    tickColor: "#4F81BC",
+                    includeZero: false
+                },
+                axisY2: {
+                    title: "Impressions",
+                    titleFontColor: "#C0504E",
+                    lineColor: "#C0504E",
+                    labelFontColor: "#C0504E",
+                    tickColor: "#C0504E",
+                    includeZero: false
+                },
+                toolTip: {
+                    shared: true
+                },
+                legend: {
+                    cursor: "pointer",
+                    itemclick: toggleDataSeries
+                },
+                data: [
+                    {
+                		type: "spline",
+		                name: "Clicks",
+		                showInLegend: true,
+		                xValueFormatString: "MMM YYYY",
+
+		                dataPoints: addData(data.clicks)
+	                },
+	                {
+                        type: "spline",
+                        name: "Impressions",
+                        axisYType: "secondary",
+                        showInLegend: true,
+                        xValueFormatString: "MMM YYYY",
+		                dataPoints: addData(data.impressions)
+	                }
+                ]
+            };
+        $("#metric_chart_id").CanvasJSChart(options);
+
+    });
+};
+loadChartData();
+
+$(document).on("submit", "form", function(e){
+    e.preventDefault();
+    return  false;
+});
+
+
+$('#form_submit_id').click(function(){
+    var form = $('#filter_form_id');
+    loadChartData(form.serialize());
+});
+
+
+{% endblock %}
+</script>
+
+{% block content %}
+<div class="row">
+    <div class="col-sm-4" style="margin-top: 40px;">
+        <form id="filter_form_id">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary" id="form_submit_id">Apply</button>
+        </form>
+    </div>
+    <div class="col-sm-8">
+        <div id="metric_chart_id" style="height: 500px; max-width: 1200px; margin: 0px auto;"></div>
+    </div>
+</div>
+
+
+{% endblock content %}
